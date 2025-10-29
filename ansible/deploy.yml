@@ -1,0 +1,22 @@
+---
+- name: Deploy Healthcare WebApp container
+  hosts: web
+  become: yes
+  tasks:
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Pull latest image from Docker Hub
+      command: docker pull ravindunana/healthcare-webapp:latest
+
+    - name: Stop old container if running
+      command: docker stop healthcare-webapp || true
+
+    - name: Remove old container if exists
+      command: docker rm healthcare-webapp || true
+
+    - name: Run new container
+      command: docker run -d --name healthcare-webapp -p 5000:5000 ravindunana/healthcare-webapp:latest
