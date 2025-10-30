@@ -1,22 +1,37 @@
 ---
 - name: Deploy Healthcare WebApp container
-  hosts: web
+  hosts: all
   become: yes
   tasks:
+
     - name: Ensure Docker is installed
       apt:
         name: docker.io
         state: present
-        update_cache: yes
+      become: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure Docker Python module is installed
+      pip:
+        name: docker
+        state: present
 
     - name: Pull latest image from Docker Hub
-      command: docker pull ravindunana/healthcare-webapp:latest
+      docker_image:
+        name: ravindunana/healthcare-webapp
+        source: pull
 
-    - name: Stop old container if running
-      command: docker stop healthcare-webapp || true
+    - name: Stop and remove old container if running
+      docker_container:
+        name: healthcare-webapp
+        state: absent
+        force_kill: yes
 
-    - name: Remove old container if exists
-      command: docker rm healthcare-webapp || true
-
-    - name: Run new container
-      command: docker run -d --name healthcare-webapp -p 5000:5000 ravindunana/healthcare-webapp:latest
+    - name: Start new container
+      docker_container:
+        name: healthcare-webapp
+        image: ravindunana/healthcare-webapp:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "5000:5000"
